@@ -40,7 +40,8 @@ NOTE: The GitHub repository also contains the dataset for the assignment so you 
 ### Loading and preprocessing the data
 
 1. Load the data and librarys used in the analysis
-```{r, echo = TRUE}
+
+```r
 url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 tempf = tempfile()
 download.file(url = url, destfile = tempf, method = 'auto')
@@ -50,7 +51,8 @@ library(dplyr)
 library(ggplot2)
 ```
 2. Process/transform the data into a format suitable for analysis
-```{r, echo=TRUE}
+
+```r
 ## reorder the data so interval is the first column
 stpdata <- data[,c(3,1,2)]
 ```
@@ -61,31 +63,58 @@ For this part of the assignment, you can ignore the missing values in the datase
 
 1. Calculate the total number of steps taken per day
 This dataframe is fairly long for reporting purposes so we will just print the first rows
-```{r, echo=TRUE}
+
+```r
 totalsteps <- aggregate(steps ~ date, stpdata, sum, na.action = na.omit)
 head(totalsteps)
 ```
 
+```
+##         date steps
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
+```
+
 2. Make a histogram of the total number of steps taken each day
-```{r, echo=TRUE}
+
+```r
 hist(totalsteps[,2],col="red",
      breaks=seq(from=0, to=26000, by=2000),
      xlab="Total number of steps per day", 
      main="Histogram of the total number of steps taken per day")
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
 3. Calculate and report the mean and median of the total number of steps taken per day
-```{r, echo=TRUE}
+
+```r
 ## mean number of steps per day
 mean(totalsteps[,2])
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 ## median number of steps per day
 median(totalsteps[,2])
+```
+
+```
+## [1] 10765
 ```
 
 ### What is the average daily activity pattern?
 
 1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
-```{r, echo=TRUE}
+
+```r
 ints <- factor(stpdata[,1])
 aggsteps <- aggregate(stpdata$steps ~ ints, stpdata,  mean)
 
@@ -98,12 +127,18 @@ plot(aggsteps, type="l",
      main="Average number of steps per intervals")
 ```
 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+
 2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-```{r, echo=TRUE}
+
+```r
 maxint <- which.max(aggsteps$`stpdata$steps`)
 maxactual <- stpdata[maxint,1]
 sprintf("Max steps at the %sth interval also known as interval %s", maxint, maxactual)
+```
 
+```
+## [1] "Max steps at the 104th interval also known as interval 835"
 ```
 
 ### Imputing missing values
@@ -111,9 +146,14 @@ sprintf("Max steps at the %sth interval also known as interval %s", maxint, maxa
 Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
 
 1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
-```{r, echo=TRUE}
+
+```r
 missing <- as.character(sum(is.na(stpdata)))
 sprintf("Number of missing values is: %s", missing)
+```
+
+```
+## [1] "Number of missing values is: 2304"
 ```
 
 2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
@@ -121,7 +161,8 @@ sprintf("Number of missing values is: %s", missing)
 
 I chose to replace each NA with the average for that interval, this was stored as cleansteps.
 The code for both 2. and 3. is shown below
-```{r, echo=TRUE}
+
+```r
 stpdata %>% 
 group_by(interval) %>%
 mutate(steps= replace(steps, is.na(steps), mean(steps, na.rm=TRUE))) -> cleansteps
@@ -130,17 +171,33 @@ mutate(steps= replace(steps, is.na(steps), mean(steps, na.rm=TRUE))) -> cleanste
 
 4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-```{r, echo=TRUE}
+
+```r
 # Calculate total steps per day and make histogram
 totalstepsclean <- aggregate(steps ~ date, cleansteps, sum)
 hist(totalstepsclean[,2], breaks=seq(from=0, to=26000, by=2000),
      col="green", 
      xlab="Total number of steps", 
      main="Histogram of total number of steps each day\n(with NAs replaced)")
+```
 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png) 
+
+```r
 #Find mean and median perday after sub-ing NAs
 mean(totalstepsclean[,2])
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(totalstepsclean[,2])
+```
+
+```
+## [1] 10766.19
 ```
 
 By replacing the NAs with average values, the median value changed slightly, while the mean value stayed the same as expected since average values were used.
@@ -152,7 +209,8 @@ For this part the weekdays() function may be of some help here. Use the dataset 
 
 1.Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-```{r, echo = TRUE}
+
+```r
 cleansteps$date <- as.Date(factor(sort(cleansteps$date)))
 cleansteps <- cbind(cleansteps, weekdays(cleansteps$date))
 names(cleansteps)[names(cleansteps) == 'weekdays(cleansteps$date)'] <- 'Weekdays'
@@ -165,11 +223,14 @@ daylabelavg <- aggregate(steps ~ interval + DayLabel, cleansteps, mean)
 ```
 
 2.Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
-```{r}
+
+```r
 ggplot(daylabelavg, aes(x=interval, y=steps)) + geom_line(color="red") + 
         facet_wrap(~ DayLabel, nrow=2, ncol=1) +
         labs(x="Interval Number", y="Number of steps") 
 ```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png) 
 
 
 
